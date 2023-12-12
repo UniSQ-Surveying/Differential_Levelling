@@ -1749,8 +1749,8 @@
             </xsl:call-template>
           </xsl:variable>
           <xsl:variable name="rawVD" select="$cosVA * msxsl:node-set($DistMeanOfRounds)/Point[Name = $ptName]/roundsMeanDist"/>
-          <xsl:variable name="tgtHt" select="msxsl:node-set($obsData)/Round[1]/Point[Name = $ptName]/tgtHt"/>
-          <xsl:copy-of select="format-number(($rawVD + $instHt - $tgtHt) * $DistConvFactor, $DecPl4, 'Standard')"/>
+          <!-- We don't need to use target height or instrument height at all in this calc. They should be both set to zero. -->
+          <xsl:copy-of select="format-number(($rawVD) * $DistConvFactor, $DecPl4, 'Standard')"/>
         </xsl:element>
 
         <xsl:element name="SD">
