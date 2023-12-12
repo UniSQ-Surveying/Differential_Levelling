@@ -93,6 +93,8 @@
 <!-- the Survey Controller as the default value for the item.                  -->
 <xsl:variable name="userField1" select="'StartHeight|Starting benchmark height|double|'"/>
 <xsl:variable name="StartHeight" select="100"/>
+<xsl:variable name="userField2" select="'EndHeight|Ending benchmark height|double|'"/>
+<xsl:variable name="EndHeight" select="100"/>
 
 <!-- **************************************************************** -->
 <!-- Set global variables from the Environment section of JobXML file -->
@@ -272,6 +274,9 @@
     <span id="startHeight" style="visibility: hidden;">
       <xsl:value-of select="$StartHeight"/>
     </span>
+    <span id="endHeight" style="visibility: hidden;">
+      <xsl:value-of select="$EndHeight"/>
+    </span>
     <br />
     <br />
     <h2>Level Book</h2>
@@ -374,6 +379,7 @@
     let rowCount = table.rows.length - 1;
     // Get the starting RL from the first level row
     const startHeight = parseFloat(document.getElementById("startHeight").innerHTML) || 0;
+    const endHeight = parseFloat(document.getElementById("endHeight").innerHTML) || 0;
     let currentRL = startHeight;
     for (var r = 2; r &lt; rowCount; r++){
         const deltaHeight = parseFloat(table.rows[r].cells[7].innerHTML) || 0;
@@ -384,7 +390,7 @@
     }
 
     // Calculate diff between starting and ending benchmark readings
-    document.getElementById("delta").innerHTML = "Misclose = " + (currentRL - startHeight).toFixed(4);
+    document.getElementById("delta").innerHTML = "Misclose = " + (currentRL - endHeight).toFixed(4);
 
     let k = subTotalSlopeDistance / 1000;
     document.getElementById("12rootk").innerHTML = "Third order (12√k) = " + (12 * Math.sqrt(k) / 1000).toFixed(4);
