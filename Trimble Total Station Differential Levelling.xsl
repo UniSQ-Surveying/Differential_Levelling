@@ -366,7 +366,7 @@
     let subTotalFall = Array.from(table.rows).slice(1).reduce((total, row) => {
       return total + parseFloat(row.cells[4].innerHTML || 0);
     }, 0);
-    document.getElementById("sumFall").innerHTML = "Sum Fall = " + subTotalRise.toFixed(4);
+    document.getElementById("sumFall").innerHTML = "Sum Fall = " + subTotalFall.toFixed(4);
 
     let subTotalSlopeDistance = Array.from(table.rows).slice(1).reduce((total, row) => {
       let obsType = row.cells[9].innerHTML;
