@@ -271,10 +271,16 @@
 
   <body>
     <xsl:call-template name="ProjectDetails"/>
-    <h2 id="startHeight">
+    <span id="startHeight" style="visibility: hidden;">
+      <xsl:value-of select="$StartHeight"/>
+    </span>
+    <span id="endHeight" style="visibility: hidden;">
+      <xsl:value-of select="$EndHeight"/>
+    </span>
+    <h2>
       Starting Benchmark Height: <xsl:value-of select="$StartHeight"/>
     </h2>
-    <h2 id="endHeight">
+    <h2>
       Ending Benchmark Height: <xsl:value-of select="$EndHeight"/>
     </h2>
     <br />
