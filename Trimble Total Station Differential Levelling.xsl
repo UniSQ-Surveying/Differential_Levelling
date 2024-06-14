@@ -15,7 +15,7 @@
 <!-- OPERATION OF THIS STYLE SHEET WILL BE UNINTERRUPTED OR ERROR FREE.                        -->
 
 <!-- Developed by Andrew Cleland 2023 -->
-<!-- 230919 -->
+<!-- 240614 -->
 <!-- Differential levelling data can be collected with a total station.
 
     See https://github.com/UniSQ-Surveying/Differential_Levelling for instructions
@@ -290,7 +290,7 @@
       <xsl:with-param name="includeBorders">true</xsl:with-param>
       <xsl:with-param name="Id"><xsl:text>levelBook</xsl:text></xsl:with-param>
     </xsl:call-template>
-    <xsl:call-template name="OutputTenElementTableLine">
+    <xsl:call-template name="OutputFifteenElementTableLine">
         <xsl:with-param name="val1">
           <xsl:text>BS</xsl:text>
         </xsl:with-param>
@@ -320,6 +320,12 @@
         </xsl:with-param>
         <xsl:with-param name="val10">
           <xsl:text>Obs Type</xsl:text>
+        </xsl:with-param>
+        <xsl:with-param name="val11">
+          <xsl:text>BS Dist</xsl:text>
+        </xsl:with-param>
+        <xsl:with-param name="val12">
+          <xsl:text>FS Dist</xsl:text>
         </xsl:with-param>
     </xsl:call-template>
     <xsl:call-template name="OutputLevelData"/>
@@ -375,6 +381,13 @@
     document.getElementById("sumFall").innerHTML = "Sum Fall = " + subTotalFall.toFixed(4);
 
     let subTotalSlopeDistance = Array.from(table.rows).slice(1).reduce((total, row) => {
+      let obsType = row.cells[9].innerHTML;
+      let bsOrFS = ['BS', 'FS'].includes(obsType);
+      return  bsOrFS ? (total + (parseFloat(row.cells[8].innerHTML || 0))) : total;
+    }, 0);
+    document.getElementById("sumSlopeDistance").innerHTML = "Sum BS and FS (k) = " + subTotalSlopeDistance.toFixed(3);
+
+    let subTotalBSDistance = Array.from(table.rows).slice(1).reduce((total, row) => {
       let obsType = row.cells[9].innerHTML;
       let bsOrFS = ['BS', 'FS'].includes(obsType);
       return  bsOrFS ? (total + (parseFloat(row.cells[8].innerHTML || 0))) : total;
@@ -457,6 +470,7 @@
       <xsl:variable name="stn" select="stnName" />
       <xsl:variable name="ptName" select="pointName" />
       <xsl:variable name="bsPoint" select="backsightPoint" />
+      <xsl:variable name="bsSD" select="backsightSD" />
       <!-- Look ahead to the next row so that we can pull out the BS value on a FS row -->
       <xsl:variable name="next" select="msxsl:node-set($AllRounds)/StnPoint[$i + 1]" />
       <xsl:variable name="prev" select="msxsl:node-set($AllRounds)/StnPoint[$i - 1]" />
@@ -487,18 +501,31 @@
         <xsl:element name="SD">
           <xsl:value-of select="format-number(SD, $DecPl3, 'Standard')"/>
         </xsl:element>
+        <xsl:element name="backsightSD">
+          <xsl:value-of select="format-number(backsightSD, $DecPl3, 'Standard')"/>
+        </xsl:element>
         <xsl:element name="ObsType">
           <xsl:value-of select="obsType"/>
         </xsl:element>
         <xsl:choose>
           <xsl:when test="obsType = 'BS'">
-            <xsl:element name="BS">
-              <xsl:value-of select="VD"/>
-            </xsl:element>
+            <xsl:element name="BSRow">
+              <xsl:element name="BS">
+                <xsl:value-of select="VD"/>
+              </xsl:element>
+              <xsl:element name="BSDist">
+                <xsl:value-of select="backsightSD"/>
+              </xsl:element>
+              </xsl:element>
           </xsl:when>
           <xsl:otherwise>
-            <xsl:element name="BS">
-              <xsl:text />
+            <xsl:element name="BSRow">
+              <xsl:element name="BS">
+                <xsl:text />
+              </xsl:element>
+              <xsl:element name="BSDist">
+                <xsl:text />
+              </xsl:element>
             </xsl:element>
           </xsl:otherwise>
         </xsl:choose>
@@ -565,6 +592,12 @@
                   </xsl:otherwise>
                   </xsl:choose>
               </xsl:element>
+              <xsl:element name="FSDist">
+                <xsl:value-of select="SD"/>
+              </xsl:element>
+              <xsl:element name="BSDist">
+                <xsl:value-of select="backsightSD"/>
+              </xsl:element>
             </xsl:element>
           </xsl:when>
           <xsl:otherwise>
@@ -587,11 +620,11 @@
 
   <xsl:for-each select="msxsl:node-set($LevelBookRows)/Row">
     <xsl:variable name="j" select="position()" />
-    <xsl:call-template name="OutputTenElementTableLine">
+    <xsl:call-template name="OutputFifteenElementTableLine">
         <xsl:with-param name="val1">
           <!-- Only one of these variables shouild ever have a value.
             Using concat to just grab whatever is available -->
-          <xsl:value-of select="concat(BS, FSRow/BS)"/>
+          <xsl:value-of select="concat(BSRow/BS, FSRow/BS)"/>
         </xsl:with-param>
         <xsl:with-param name="val2">
           <xsl:value-of select="ISRow/IS"/>
@@ -619,6 +652,12 @@
         </xsl:with-param>
         <xsl:with-param name="val10">
           <xsl:value-of select="ObsType"/>
+        </xsl:with-param>
+        <xsl:with-param name="val11">
+          <xsl:value-of select="FSRow/BSDist"/>
+        </xsl:with-param>
+        <xsl:with-param name="val12">
+          <xsl:value-of select="FSRow/FSDist"/>
         </xsl:with-param>
       </xsl:call-template>
   </xsl:for-each>
@@ -1761,6 +1800,10 @@
 
         <xsl:element name="SD">
           <xsl:value-of select="format-number(msxsl:node-set($DistMeanOfRounds)/Point[Name = $ptName]/roundsMeanDist * $DistConvFactor, $DecPl4, 'Standard')"/>
+        </xsl:element>
+
+        <xsl:element name="backsightSD">
+          <xsl:value-of select="format-number(msxsl:node-set($DistMeanOfRounds)/Point[1]/roundsMeanDist * $DistConvFactor, $DecPl4, 'Standard')"/>
         </xsl:element>
       </xsl:element>
     </xsl:for-each>
@@ -3216,6 +3259,68 @@
         <td width="7%" align="right"><xsl:value-of select="$val8"/></td>
         <td width="7%" align="right"><xsl:value-of select="$val9"/></td>
         <td width="9%" align="right"><xsl:value-of select="$val10"/></td>
+      </tr>
+    </xsl:otherwise>
+  </xsl:choose>
+
+</xsl:template>
+
+
+<xsl:template name="OutputFifteenElementTableLine">
+  <xsl:param name="val1" select="'&#0160;'"/> <!-- Default to non-breaking space to force border lines to show in all cases -->
+  <xsl:param name="val2" select="'&#0160;'"/>
+  <xsl:param name="val3" select="'&#0160;'"/>
+  <xsl:param name="val4" select="'&#0160;'"/>
+  <xsl:param name="val5" select="'&#0160;'"/>
+  <xsl:param name="val6" select="'&#0160;'"/>
+  <xsl:param name="val7" select="'&#0160;'"/>
+  <xsl:param name="val8" select="'&#0160;'"/>
+  <xsl:param name="val9" select="'&#0160;'"/>
+  <xsl:param name="val10" select="'&#0160;'"/>
+  <xsl:param name="val11" select="'&#0160;'"/>
+  <xsl:param name="val12" select="'&#0160;'"/>
+  <xsl:param name="val13" select="'&#0160;'"/>
+  <xsl:param name="val14" select="'&#0160;'"/>
+  <xsl:param name="val15" select="'&#0160;'"/>
+  <xsl:param name="centre" select="'false'"/>
+
+  <xsl:choose>
+    <xsl:when test="$centre = 'true'">
+      <tr>
+        <td width="11%" align="center"><xsl:value-of select="$val1"/></td>
+        <td width="11%" align="center"><xsl:value-of select="$val2"/></td>
+        <td width="11%" align="center"><xsl:value-of select="$val3"/></td>
+        <td width="11%" align="center"><xsl:value-of select="$val4"/></td>
+        <td width="11%" align="center"><xsl:value-of select="$val5"/></td>
+        <td width="11%" align="center"><xsl:value-of select="$val6"/></td>
+        <td width="11%" align="center"><xsl:value-of select="$val7"/></td>
+        <td width="7%" align="center"><xsl:value-of select="$val8"/></td>
+        <td width="7%" align="center"><xsl:value-of select="$val9"/></td>
+        <td width="9%" align="center"><xsl:value-of select="$val10"/></td>
+        <td width="9%" align="center"><xsl:value-of select="$val11"/></td>
+        <td width="9%" align="center"><xsl:value-of select="$val12"/></td>
+        <td width="9%" align="center"><xsl:value-of select="$val13"/></td>
+        <td width="9%" align="center"><xsl:value-of select="$val14"/></td>
+        <td width="9%" align="center"><xsl:value-of select="$val15"/></td>
+      </tr>
+    </xsl:when>
+    <xsl:otherwise>
+      <tr>
+        <td width="11%" align="right"><xsl:value-of select="$val1"/></td>
+        <td width="11%" align="right"><xsl:value-of select="$val2"/></td>
+        <td width="11%" align="right"><xsl:value-of select="$val3"/></td>
+        <td width="11%" align="right"><xsl:value-of select="$val4"/></td>
+        <td width="11%" align="right"><xsl:value-of select="$val5"/></td>
+        <td width="11%" align="right"><xsl:value-of select="$val6"/></td>
+        <td width="11%" align="right"><xsl:value-of select="$val7"/></td>
+        <td width="7%" align="right"><xsl:value-of select="$val8"/></td>
+        <td width="7%" align="right"><xsl:value-of select="$val9"/></td>
+        <td width="9%" align="right"><xsl:value-of select="$val10"/></td>
+        <td width="9%" align="right"><xsl:value-of select="$val11"/></td>
+        <td width="9%" align="right"><xsl:value-of select="$val12"/></td>
+        <td width="9%" align="right"><xsl:value-of select="$val13"/></td>
+        <td width="9%" align="right"><xsl:value-of select="$val14"/></td>
+        <td width="9%" align="right"><xsl:value-of select="$val15"/></td>
       </tr>
     </xsl:otherwise>
   </xsl:choose>
